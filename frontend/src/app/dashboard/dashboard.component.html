@@ -1,0 +1,72 @@
+<div class="min-h-screen min-w-screen bg-gray-900 justify-items-center">
+  <div class="border-b h-min min-w-screen p-4">
+    <h1 class="text-blue-300 text-xl font-bold">SOC Dashboard</h1>
+    <p class="text-gray-100">Security Operations Center - Vulnerability Management</p>
+  </div>
+  <div class="justify-items-center p-4 h-min container mx-auto">
+    <div class="flex-grow w-full grid grid-cols-4 gap-4">
+        <div class="bg-gray-700 border border-gray-600 rounded-lg p-4">
+          <p class="text-red-400 text-xl font-bold">{{ vulnerabilityCounts.critical }}</p>
+          <p class="text-white">Critical</p>
+        </div>
+        <div class="bg-gray-700 border border-gray-600 rounded-lg p-4">
+          <p class="text-orange-400 text-xl font-bold">{{ vulnerabilityCounts.high }}</p>
+          <p class="text-white">High</p>
+        </div>
+        <div class="bg-gray-700 border border-gray-600 rounded-lg p-4">
+          <p class="text-yellow-400 text-xl font-bold">{{ vulnerabilityCounts.medium }}</p>
+          <p class="text-white">Medium</p>
+        </div>
+        <div class="bg-gray-700 border border-gray-600 rounded-lg p-4">
+          <p class="text-green-400 text-xl font-bold">{{ vulnerabilityCounts.low }}</p>
+          <p class="text-white">Low</p>
+        </div>
+    </div>
+    <div class="flex flex-row w-full space-x-3 mt-4 mb-4">
+      <button class="text-white bg-blue-400 hover:bg-blue-500 transition duration-200 border border-gray-600 rounded-md px-2">All</button>
+      <button class="text-white bg-gray-700 hover:bg-gray-600 transition duration-200 border border-gray-600 rounded-md px-2">Critical</button>
+      <button class="text-white bg-gray-700 hover:bg-gray-600 transition duration-200 border border-gray-600 rounded-md px-2">High</button>
+      <button class="text-white bg-gray-700 hover:bg-gray-600 transition duration-200 border border-gray-600 rounded-md px-2">Medium</button>
+      <button class="text-white bg-gray-700 hover:bg-gray-600 transition duration-200 border border-gray-600 rounded-md px-2">Low</button>
+      <div class="flex-grow"></div>
+      <button 
+        class="bg-blue-400 hover:bg-blue-500 text-white px-2 rounded-md transition duration-200 flex-end"
+        (click)="goToIncidentForm()">
+        Create Incident
+      </button>
+    </div>
+    <table class="bg-gray-800 rounded-lg w-full">
+      <thead>
+          <tr>
+            <th colspan="1" class="bg-gray-800 text-blue-300 px-4 py-2 rounded-lg">Active Vulnerabilities</th>
+          </tr>
+      </thead>
+      <tbody class="bg-gray-700 text-gray-400">
+        <tr *ngFor="let vuln of vulnerabilities" class="border-b border-gray-600">
+          <td class="p-8">
+            <p class="bg-gray-600 w-fit">{{ vuln.id }}</p>
+            <p class="w-fit">🖥️ {{ vuln.system }}</p>
+          </td>
+          <td class="font-bold p-8">{{ vuln.title }}</td>
+          <td class="p-8">CVSS {{ vuln.cvssScore }}</td>
+          <td class="p-8"><p 
+                            class="w-fit p-1 rounded-sm" 
+                            [ngClass]="{
+                              'bg-red-600/50 text-red-400': vuln.status === 'OPEN',
+                              'bg-yellow-600/50 text-yellow-400': vuln.status === 'IN_PROGRESS',
+                              'bg-green-600/50 text-green-400': vuln.status === 'RESOLVED',
+                          }">{{ vuln.status }}</p></td>
+          <td class="p-8"><p 
+                            class="w-fit p-1 rounded-3xl border-1"
+                            [ngClass]="{
+                              'bg-red-600/50 text-red-400 border-red-600': vuln.severity === 'Critical',
+                              'bg-orange-600/50 text-orange-400 border-orange-600': vuln.severity === 'High',
+                              'bg-yellow-600/50 text-yellow-400 border-yellow-600': vuln.severity === 'Medium',
+                              'bg-green-600/50 text-green-400 border-green-600': vuln.severity === 'Low',
+                            }"
+                          >{{ vuln.severity }}</p></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

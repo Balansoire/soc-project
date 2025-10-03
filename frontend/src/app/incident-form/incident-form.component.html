@@ -1,0 +1,127 @@
+<div class="min-h-screen bg-gray-900 flex items-center justify-center">
+  <form class="bg-gray-700 rounded-lg shadow-2xl p-8 max-w-md w-full"
+        [formGroup]="applyForm"
+        (ngSubmit)="submitForm($event)"
+  >
+    <h1 class="text-xl font-bold text-blue-300 mb-4">
+      Create Security Incident
+    </h1>
+
+    <!-- Vulnerability -->
+    <div class="mb-4">
+      <label class="block text-white mb-2" for="vulnerability">
+        Vulnerability *
+      </label>
+      <select 
+        class="w-full p-2 rounded-md bg-gray-600 text-white border border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        [class.border-red-500]="applyForm.get('vulnerabilityId')?.invalid && applyForm.get('vulnerabilityId')?.touched"
+        formControlName="vulnerabilityId">
+        <option value="" disabled>Select a vulnerability</option>
+        <option *ngFor="let vuln of vulnerabilities" [value]="vuln.id">{{ vuln.title }}</option>
+      </select>
+      
+      @if (vulnerabilityId?.invalid && vulnerabilityId?.touched) {
+        <div class="mt-2 text-red-400 text-sm">
+          @if (vulnerabilityId?.errors?.['required']) {
+            <p>⚠️ Please select a vulnerability</p>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Assigned To -->
+    <div class="mb-4">
+      <label class="block text-white mb-2" for="assignedTo">
+        Assigned To *
+      </label>
+      <input 
+        type="text" 
+        class="w-full p-2 rounded-md bg-gray-600 text-white border border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400" 
+        [class.border-red-500]="assignedTo?.invalid && assignedTo?.touched"
+        placeholder="analyst@company.com" 
+        formControlName="assignedTo"
+      />
+      
+      @if (assignedTo?.invalid && assignedTo?.touched) {
+        <div class="mt-2 text-red-400 text-sm">
+          @if (assignedTo?.errors?.['required']) {
+            <p>⚠️ Email is required</p>
+          }
+          @if (assignedTo?.errors?.['email']) {
+            <p>⚠️ Please enter a valid email address</p>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Priority -->
+    <div class="mb-4">
+      <label class="block text-white mb-2" for="priority">
+        Priority *
+      </label>
+      <select 
+        class="w-full p-2 rounded-md bg-gray-600 text-white border border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        [class.border-red-500]="priority?.invalid && priority?.touched"
+        formControlName="priority">
+        <option value="CRITICAL">Critical</option>
+        <option value="HIGH">High</option>
+        <option value="MEDIUM">Medium</option>
+        <option value="LOW">Low</option>
+      </select>
+      
+      @if (priority?.invalid && priority?.touched) {
+        <div class="mt-2 text-red-400 text-sm">
+          @if (priority?.errors?.['required']) {
+            <p>⚠️ Priority is required</p>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Description -->
+    <div class="mb-6">
+      <label class="block text-white mb-2" for="description">
+        Description
+      </label>
+      <textarea 
+        class="w-full p-2 rounded-md bg-gray-600 text-white border border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400" 
+        [class.border-red-500]="description?.invalid && description?.touched"
+        rows="4" 
+        placeholder="Investigation required..." 
+        formControlName="description">
+      </textarea>
+      
+      @if (description?.invalid && description?.touched) {
+        <div class="mt-2 text-red-400 text-sm">
+          @if (description?.errors?.['maxlength']) {
+            <p>⚠️ Description cannot exceed {{ description?.errors?.['maxlength'].requiredLength }} characters 
+               (current: {{ description?.errors?.['maxlength'].actualLength }})</p>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Error summary -->
+    @if (applyForm.invalid && applyForm.touched) {
+      <div class="mb-4 p-3 bg-red-900/50 border border-red-500 rounded-md">
+        <p class="text-red-400 text-sm font-semibold">⚠️ Please correct the errors above before submitting</p>
+      </div>
+    }
+
+    <!-- Buttons -->
+    <div class="flex justify-end gap-2">
+      <button
+        type="button"
+        class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-md transition duration-200"
+        (click)="goToDashboard()">
+        Cancel
+      </button>
+      <button
+        type="submit"
+        [disabled]="applyForm.invalid && applyForm.touched"
+        class="bg-blue-400 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-md transition duration-200 disabled:bg-gray-500 disabled:cursor-not-allowed">
+        Create Incident
+      </button>
+    </div>
+  </form>
+</div>
