@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { NgFor } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-incident-form',
@@ -9,8 +10,70 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
   templateUrl: './incident-form.component.html',
   styleUrl: './incident-form.component.css'
 })
-export class IncidentFormComponent {
-  constructor(private readonly router: Router) {}
+export class IncidentFormComponent implements OnInit {
+  constructor(
+    private readonly router: Router,
+    private readonly httpClient: HttpClient
+  ) {
+    this.vulnerabilities = [];
+  }
+
+  ngOnInit() {
+    this.loadVulnerabilities();
+  }
+
+  loadVulnerabilities() {
+    this.httpClient.get(this.vulnerabilityUrl).subscribe((data: any) => {
+      this.vulnerabilities = data;
+    });
+  }
+
+  // Getters pour faciliter l'accès dans le template
+  get vulnerabilityId() {
+    return this.applyForm.get('vulnerabilityId');
+  }
+  
+  get assignedTo() {
+    return this.applyForm.get('assignedTo');
+  }
+  
+  get priority() {
+    return this.applyForm.get('priority');
+  }
+  
+  get description() {
+    return this.applyForm.get('description');
+  }
+  
+  goToDashboard() {
+    this.router.navigate(['/dashboard']);
+  }
+  
+  submitForm(event: Event) {
+    event.preventDefault();
+    this.applyForm.markAllAsTouched();
+    this.submitted = true;
+    
+    if (this.applyForm.valid) {
+      console.log('Form data:', this.applyForm.value);
+      this.httpClient.post('http://localhost:5000/api/incidents', this.applyForm.value)
+      .subscribe({
+        next: (response) => {
+          console.log('Incident reported successfully:', response);
+          alert('Incident reported successfully!');
+          this.router.navigate(['/dashboard']);
+        },
+        error: (error) => {
+          console.error('Error reporting incident:', error);
+          alert('Failed to report incident. Please try again.');
+        }
+      });
+    }
+  }
+  
+  vulnerabilityUrl = 'http://localhost:5000/api/vulnerabilities';
+  vulnerabilities: any[] = [];
+  submitted = false;
 
   applyForm = new FormGroup({
     vulnerabilityId: new FormControl('', Validators.required),
@@ -18,85 +81,4 @@ export class IncidentFormComponent {
     priority: new FormControl('HIGH', Validators.required),
     description: new FormControl('', Validators.maxLength(500)),
   });
-
-  // Getters pour faciliter l'accès dans le template
-  get vulnerabilityId() {
-    return this.applyForm.get('vulnerabilityId');
-  }
-
-  get assignedTo() {
-    return this.applyForm.get('assignedTo');
-  }
-
-  get priority() {
-    return this.applyForm.get('priority');
-  }
-
-  get description() {
-    return this.applyForm.get('description');
-  }
-
-  goToDashboard() {
-    this.router.navigate(['/dashboard']);
-  }
-
-  submitForm(event: Event) {
-    event.preventDefault();
-    this.applyForm.markAllAsTouched();
-    
-    if (this.applyForm.valid) {
-      console.log('Form data:', this.applyForm.value);
-      // TODO: submit to backend
-      alert('Incident reported successfully!');
-      this.router.navigate(['/dashboard']);
-    }
-  }
-
-  vulnerabilities = [
-    {
-      id: 'CVS-2024-0001',
-      title: 'SQL Injection vulnerability in login form',
-      severity: 'Critical',
-      system: 'web-app-prod-01',
-      status: 'OPEN',
-      discoveredAt: "2024-01-15T10:30:00Z",
-      cvssScore: 7.5,
-    },
-    {
-      id: 'CVS-2024-0002',
-      title: 'Cross-Site Scripting (XSS) in Admin Panel',
-      severity: 'High',
-      system: 'admin-dashboard',
-      status: 'IN_PROGRESS',
-      discoveredAt: "2024-01-16T11:00:00Z",
-      cvssScore: 7.8,
-    },
-    {
-      id: 'CVS-2024-0003',
-      title: 'Outdated SSL/TLS Configuration',
-      severity: 'Medium',
-      system: 'mail-server-01',
-      status: 'OPEN',
-      discoveredAt: "2024-01-17T12:00:00Z",
-      cvssScore: 5.3,
-    },
-    {
-      id: 'CVS-2024-0004',
-      title: 'Information Disclosure in API Response',
-      severity: 'Low',
-      system: 'api-gateway',
-      status: 'RESOLVED',
-      discoveredAt: "2024-01-18T09:00:00Z",
-      cvssScore: 3.1,
-    },
-    {
-      id: 'CVS-2024-0005',
-      title: 'Directory Traversal Vulnerability',
-      severity: 'High',
-      system: 'file-server-02',
-      status: 'OPEN',
-      discoveredAt: "2024-01-19T14:00:00Z",
-      cvssScore: 8.1,
-    },
-  ]
 }

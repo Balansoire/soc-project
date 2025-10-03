@@ -102,7 +102,7 @@
     </div>
 
     <!-- Error summary -->
-    @if (applyForm.invalid && applyForm.touched) {
+    @if (applyForm.invalid && applyForm.touched && submitted) {
       <div class="mb-4 p-3 bg-red-900/50 border border-red-500 rounded-md">
         <p class="text-red-400 text-sm font-semibold">⚠️ Please correct the errors above before submitting</p>
       </div>

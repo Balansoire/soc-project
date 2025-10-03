@@ -59,10 +59,10 @@
           <td class="p-8"><p 
                             class="w-fit p-1 rounded-3xl border-1"
                             [ngClass]="{
-                              'bg-red-600/50 text-red-400 border-red-600': vuln.severity === 'Critical',
-                              'bg-orange-600/50 text-orange-400 border-orange-600': vuln.severity === 'High',
-                              'bg-yellow-600/50 text-yellow-400 border-yellow-600': vuln.severity === 'Medium',
-                              'bg-green-600/50 text-green-400 border-green-600': vuln.severity === 'Low',
+                              'bg-red-600/50 text-red-400 border-red-600': vuln.severity === 'CRITICAL',
+                              'bg-orange-600/50 text-orange-400 border-orange-600': vuln.severity === 'HIGH',
+                              'bg-yellow-600/50 text-yellow-400 border-yellow-600': vuln.severity === 'MEDIUM',
+                              'bg-green-600/50 text-green-400 border-green-600': vuln.severity === 'LOW',
                             }"
                           >{{ vuln.severity }}</p></td>
         </tr>

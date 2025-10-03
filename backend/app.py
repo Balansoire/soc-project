@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, abort
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
@@ -19,20 +19,25 @@ def generate_incident_id():
     current_year = datetime.now().year
     
     # Récupérer le dernier incident de l'année en cours
-    last_incident = Incident.query.filter(
-        Incident.id.like(f'INC-{current_year}-%')
-    ).order_by(Incident.id.desc()).first()
+    last_incident = db.session.query(Incident)\
+        .filter(Incident.id.like(f'INC-{current_year}-%'))\
+        .order_by(Incident.id.desc())\
+        .first()
     
     if last_incident:
-        # Extraire le numéro séquentiel du dernier incident
         last_number = int(last_incident.id.split('-')[-1])
         next_number = last_number + 1
     else:
-        # Premier incident de l'année
         next_number = 1
     
-    # Formater avec des zéros à gauche (3 chiffres)
     return f'INC-{current_year}-{next_number:03d}'
+
+def get_or_404(model, id):
+    """Remplace Query.get_or_404 pour SQLAlchemy 2.x"""
+    obj = db.session.get(model, id)
+    if obj is None:
+        abort(404, description=f"{model.__name__} not found")
+    return obj
 
 # ============ MODELS ============
 
@@ -93,35 +98,29 @@ def health():
 
 @app.route('/api/vulnerabilities', methods=['GET'])
 def get_vulnerabilities():
-    """Récupérer toutes les vulnérabilités"""
     try:
-        vulnerabilities = Vulnerability.query.all()
+        vulnerabilities = db.session.query(Vulnerability).all()
         return jsonify([vuln.to_dict() for vuln in vulnerabilities]), 200
     except Exception as e:
         return jsonify({"error": "Failed to fetch vulnerabilities", "details": str(e)}), 500
 
 @app.route('/api/vulnerabilities/<string:vuln_id>', methods=['GET'])
 def get_vulnerability(vuln_id):
-    """Récupérer une vulnérabilité spécifique"""
     try:
-        vulnerability = Vulnerability.query.get_or_404(vuln_id)
+        vulnerability = get_or_404(Vulnerability, vuln_id)
         return jsonify(vulnerability.to_dict()), 200
     except Exception as e:
         return jsonify({"error": "Vulnerability not found", "details": str(e)}), 404
 
 @app.route('/api/vulnerabilities', methods=['POST'])
 def create_vulnerability():
-    """Créer une nouvelle vulnérabilité"""
     try:
         data = request.get_json()
-        
-        # Validation
         required_fields = ['id', 'title', 'severity', 'system', 'status', 'cvssScore']
         for field in required_fields:
             if field not in data:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
         
-        # Créer la vulnérabilité
         vulnerability = Vulnerability(
             id=data['id'],
             title=data['title'],
@@ -129,13 +128,12 @@ def create_vulnerability():
             system=data['system'],
             description=data.get('description', ''),
             status=data['status'],
-            discoveredAt=datetime.fromisoformat(data.get('discoveredAt', datetime.now().isoformat())),
-            cvssScore=float(data['cvssScore'])
+            discoveredat=datetime.fromisoformat(data.get('discoveredAt', datetime.now().isoformat())),
+            cvssscore=float(data['cvssScore'])
         )
         
         db.session.add(vulnerability)
         db.session.commit()
-        
         return jsonify(vulnerability.to_dict()), 201
     except Exception as e:
         db.session.rollback()
@@ -143,12 +141,10 @@ def create_vulnerability():
 
 @app.route('/api/vulnerabilities/<string:vuln_id>', methods=['PUT'])
 def update_vulnerability(vuln_id):
-    """Mettre à jour une vulnérabilité"""
     try:
-        vulnerability = Vulnerability.query.get_or_404(vuln_id)
+        vulnerability = get_or_404(Vulnerability, vuln_id)
         data = request.get_json()
         
-        # Mettre à jour les champs
         if 'title' in data:
             vulnerability.title = data['title']
         if 'severity' in data:
@@ -160,10 +156,9 @@ def update_vulnerability(vuln_id):
         if 'status' in data:
             vulnerability.status = data['status']
         if 'cvssScore' in data:
-            vulnerability.cvssScore = float(data['cvssScore'])
+            vulnerability.cvssscore = float(data['cvssScore'])
         
         db.session.commit()
-        
         return jsonify(vulnerability.to_dict()), 200
     except Exception as e:
         db.session.rollback()
@@ -171,12 +166,10 @@ def update_vulnerability(vuln_id):
 
 @app.route('/api/vulnerabilities/<string:vuln_id>', methods=['DELETE'])
 def delete_vulnerability(vuln_id):
-    """Supprimer une vulnérabilité"""
     try:
-        vulnerability = Vulnerability.query.get_or_404(vuln_id)
+        vulnerability = get_or_404(Vulnerability, vuln_id)
         db.session.delete(vulnerability)
         db.session.commit()
-        
         return jsonify({"message": "Vulnerability deleted successfully"}), 200
     except Exception as e:
         db.session.rollback()
@@ -186,55 +179,45 @@ def delete_vulnerability(vuln_id):
 
 @app.route('/api/incidents', methods=['GET'])
 def get_incidents():
-    """Récupérer tous les incidents"""
     try:
-        incidents = Incident.query.all()
+        incidents = db.session.query(Incident).all()
         return jsonify([incident.to_dict() for incident in incidents]), 200
     except Exception as e:
         return jsonify({"error": "Failed to fetch incidents", "details": str(e)}), 500
 
 @app.route('/api/incidents/<string:incident_id>', methods=['GET'])
 def get_incident(incident_id):
-    """Récupérer un incident spécifique"""
     try:
-        incident = Incident.query.get_or_404(incident_id)
+        incident = get_or_404(Incident, incident_id)
         return jsonify(incident.to_dict()), 200
     except Exception as e:
         return jsonify({"error": "Incident not found", "details": str(e)}), 404
 
 @app.route('/api/incidents', methods=['POST'])
 def create_incident():
-    """Créer un nouveau incident"""
     try:
         data = request.get_json()
-        
-        # Validation
         required_fields = ['vulnerabilityId', 'assignedTo', 'priority']
         for field in required_fields:
             if field not in data:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
         
-        # Vérifier que la vulnérabilité existe
-        vulnerability = Vulnerability.query.get(data['vulnerabilityId'])
+        vulnerability = db.session.get(Vulnerability, data['vulnerabilityId'])
         if not vulnerability:
             return jsonify({"error": "Vulnerability not found"}), 404
         
-        # Générer l'ID automatiquement
         incident_id = generate_incident_id()
-        
-        # Créer l'incident
         incident = Incident(
             id=incident_id,
-            vulnerabilityId=data['vulnerabilityId'],
-            assignedTo=data['assignedTo'],
+            vulnerabilityid=data['vulnerabilityId'],
+            assignedto=data['assignedTo'],
             priority=data['priority'],
             description=data.get('description', ''),
-            createdAt=datetime.now()
+            createdat=datetime.now()
         )
         
         db.session.add(incident)
         db.session.commit()
-        
         return jsonify(incident.to_dict()), 201
     except Exception as e:
         db.session.rollback()
@@ -242,21 +225,18 @@ def create_incident():
 
 @app.route('/api/incidents/<string:incident_id>', methods=['PUT'])
 def update_incident(incident_id):
-    """Mettre à jour un incident"""
     try:
-        incident = Incident.query.get_or_404(incident_id)
+        incident = get_or_404(Incident, incident_id)
         data = request.get_json()
         
-        # Mettre à jour les champs
         if 'assignedTo' in data:
-            incident.assignedTo = data['assignedTo']
+            incident.assignedto = data['assignedTo']
         if 'priority' in data:
             incident.priority = data['priority']
         if 'description' in data:
             incident.description = data['description']
         
         db.session.commit()
-        
         return jsonify(incident.to_dict()), 200
     except Exception as e:
         db.session.rollback()
@@ -264,12 +244,10 @@ def update_incident(incident_id):
 
 @app.route('/api/incidents/<string:incident_id>', methods=['DELETE'])
 def delete_incident(incident_id):
-    """Supprimer un incident"""
     try:
-        incident = Incident.query.get_or_404(incident_id)
+        incident = get_or_404(Incident, incident_id)
         db.session.delete(incident)
         db.session.commit()
-        
         return jsonify({"message": "Incident deleted successfully"}), 200
     except Exception as e:
         db.session.rollback()
@@ -279,9 +257,8 @@ def delete_incident(incident_id):
 
 @app.route('/api/stats/vulnerabilities', methods=['GET'])
 def get_vulnerability_stats():
-    """Obtenir des statistiques sur les vulnérabilités"""
     try:
-        total = Vulnerability.query.count()
+        total = db.session.query(Vulnerability).count()
         by_severity = db.session.query(
             Vulnerability.severity, 
             db.func.count(Vulnerability.id)
@@ -315,7 +292,6 @@ def internal_error(error):
 
 @app.cli.command()
 def init_db():
-    """Initialize the database."""
     db.create_all()
     print("Database initialized!")
 
