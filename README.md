@@ -1,6 +1,10 @@
-# Mon Projet Full Stack
+# SOC Dashboard Project
 
 Stack: Angular + Flask + PostgreSQL
+
+## Description
+
+SOC Project est un projet de démonstration visant à présenter mes compétences en développement full-stack à travers la création d’une application de gestion des vulnérabilités et des incidents de sécurité.
 
 ## Installation et lancement
 
