@@ -17,7 +17,9 @@ SOC Project est un projet de démonstration visant à présenter mes compétence
 ## Accéder à l'application :
 
 Frontend : http://localhost:4200
-Backend API : http://localhost:5000
+Backend API :
+- Liste des vulnérabilités: http://localhost:5000/vulnerabilities
+- Liste des incidents: http://localhost:5000/incidents
 PostgreSQL : localhost:5432
 
 ## Développement
